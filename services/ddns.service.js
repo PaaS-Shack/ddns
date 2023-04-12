@@ -626,7 +626,7 @@ module.exports = {
                             send(response);
                         }
 
-                        if (this.config['logging']) {
+                        if (this.config['ddns.logging']) {
                             this.logger.info(`${rinfo.address}:${rinfo.port}`, question.name, Packet.TYPEMAP[question.type], Packet.CLASSMAP[question.class], answers.length, response.authorities.length, response.additionals.length);
                         }
                     }).catch((err) => {
