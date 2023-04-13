@@ -8,5 +8,5 @@ const broker = new ServiceBroker(config);
 broker.loadServices("./services");
 
 broker.start().then(()=>{
-    broker.repl()
+   // broker.repl()
 })
