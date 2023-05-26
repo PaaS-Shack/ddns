@@ -1,35 +1,90 @@
-[![Moleculer](https://badgen.net/badge/Powered%20by/Moleculer/0e83cd)](https://moleculer.services)
+DDNS Agent
+==========
 
-# kube
-This is a [Moleculer](https://moleculer.services/)-based microservices project. Generated with the [Moleculer CLI](https://moleculer.services/docs/0.14/moleculer-cli.html).
+This repository contains the code for the DDNS (Dynamic DNS) agent. It is a Node.js application built using the Moleculer framework and other related libraries.
 
-## Usage
-Start the project with `npm run dev` command. 
-In the terminal, try the following commands:
-- `nodes` - List all connected nodes.
-- `actions` - List all registered service actions.
-- `call greeter.hello` - Call the `greeter.hello` action.
-- `call greeter.welcome --name John` - Call the `greeter.welcome` action with the `name` parameter.
+Installation
+------------
 
+To install the dependencies, run the following command:
 
+bashCopy code
 
-## Services
-- **api**: API Gateway services
-- **greeter**: Sample service with `hello` and `welcome` actions.
+`npm install`
 
+Usage
+-----
 
-## Useful links
+To start the DDNS agent, use the following command:
 
-* Moleculer website: https://moleculer.services/
-* Moleculer Documentation: https://moleculer.services/docs/0.14/
+bashCopy code
 
-## NPM scripts
+`npm start`
 
-- `npm run dev`: Start development mode (load all services locally with hot-reload & REPL)
-- `npm run start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `npm run cli`: Start a CLI and connect to production. Don't forget to set production namespace with `--ns` argument in script
-- `npm run lint`: Run ESLint
-- `npm run ci`: Run continuous test mode with watching
-- `npm test`: Run tests & generate coverage report
-- `npm run dc:up`: Start the stack with Docker Compose
-- `npm run dc:down`: Stop the stack with Docker Compose
+Configuration
+-------------
+
+The agent can be configured using the `config.js` file. It uses the `config-mixin` library to load the configuration. The available configuration options are as follows:
+
+-   `ddns.logging`: Enable or disable logging (default: `true`)
+
+Actions
+-------
+
+The DDNS agent provides the following actions:
+
+### createRecord
+
+Creates a new DNS record.
+
+-   Parameters:
+    -   `fqdn`: Fully Qualified Domain Name (string, required)
+    -   `type`: Type of the DNS record (enum: A, AAAA, CNAME, SOA, MX, NS, TXT, CAA, SRV; required)
+    -   `data`: Data for the DNS record (string, required)
+    -   `replace`: Replacement string (string, optional)
+    -   `ttl`: Time to Live value (number, default: 99, optional)
+    -   `priority`: Priority value (number or string, default: 5, optional)
+    -   `flag`: Flag value (number, default: 0, optional)
+    -   `tag`: Tag value (string, optional)
+    -   `admin`: Admin value (string, optional)
+    -   `serial`: Serial value (number, optional)
+    -   `refresh`: Refresh value (number, optional)
+    -   `retry`: Retry value (number, optional)
+    -   `expiration`: Expiration value (number, optional)
+    -   `minimum`: Minimum value (number, optional)
+    -   `nullified`: Nullified flag (boolean, default: false, optional)
+
+### removeRecord
+
+Removes a DNS record.
+
+-   Parameters:
+    -   `id`: ID of the record (string, required)
+    -   `fqdn`: Fully Qualified Domain Name (string, required)
+    -   `network`: Network value (string, optional)
+    -   `type`: Type of the DNS record (enum: A, AAAA, CNAME, SOA, MX, NS, TXT, CAA, SRV; required)
+
+### sync
+
+Synchronizes the DNS records with the server.
+
+### maps
+
+Retrieves the DNS record maps.
+
+### stats
+
+Retrieves the statistics of the DNS agent.
+
+### bind
+
+Binds the DNS record to an address.
+
+-   Parameters:
+    -   `address`: Address to bind (string, required)
+    -   `proxy`: Proxy flag (boolean, default: false, optional)
+
+License
+-------
+
+This project is licensed under the MIT License.
