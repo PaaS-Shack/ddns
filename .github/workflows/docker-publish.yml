@@ -64,7 +64,7 @@ jobs:
         uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
         with:
           registry: ${{ vars.GITEA_REGISTRY }}
-          username: ${{ secrets.GITEA_USERNAME }}
+          username: ${{ vars.GITEA_USERNAME }}
           password: ${{ secrets.GITEA_TOKEN }}
 
       # Extract metadata (tags, labels) for Docker
