@@ -429,6 +429,7 @@ module.exports = {
             let network = this.getNetwork(obj, address)
 
             if (network.length) {
+                obj.hits++;
                 return network
             }
 
@@ -441,18 +442,19 @@ module.exports = {
                 if (cnameNetwork.length) {
                     records.push(...cnameNetwork)
                 } else if (cname && cname.records && cname.records.length) {
-
                     records.push(...cname.records)
                 }
 
                 if (records.length > 0) {
                     const aRecords = this.getRecords(records[0].data, type, address)
                     records.push(...aRecords)
+                    obj.hits++;
                     return records
                 }
             }
 
             if (obj && obj.records.length) {
+                obj.hits++;
                 return obj.records
             }
 
