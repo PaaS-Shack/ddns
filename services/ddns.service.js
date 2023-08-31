@@ -13,7 +13,7 @@ const Lock = require('../lib/lock')
 
 const dns2 = require('dns2');
 
-const { Packet } = dns2;
+const Packet = require('../lib/packet');
 
 Packet.TYPEMAP = {}
 Object.keys(Packet.TYPE).forEach((key) => {
@@ -91,10 +91,29 @@ module.exports = {
      * Actions
      */
     actions: {
+
         createRecord: {
             params: {
                 fqdn: { type: "string", min: 3, optional: false },
-                type: { type: "enum", values: ["A", "AAAA", "CNAME", "SOA", "MX", "NS", "TXT", "CAA", 'SRV'], optional: false },
+                type: {
+                    type: "enum", values: [
+                        "A",
+                        "AAAA",
+                        "CNAME",
+                        "SOA",
+                        "MX",
+                        "NS",
+                        "TXT",
+                        "CAA",
+                        "SRV",
+                        "DNSKEY",
+                        "DS",
+                        "NSEC",
+                        "NSEC3",
+                        "NSEC3PARAM",
+                        "RRSIG"
+                    ], optional: false
+                },
                 data: { type: "string", optional: false },
                 replace: { type: "string", optional: true },
 
@@ -113,6 +132,32 @@ module.exports = {
                 retry: { type: "number", optional: true },
                 expiration: { type: "number", optional: true },
                 minimum: { type: "number", optional: true },
+                //dnssec records
+                algorithm: { type: "number", optional: true },
+                protocol: { type: "number", optional: true },
+                publicKey: { type: "string", optional: true },
+                keyTag: { type: "number", optional: true },
+                digestType: { type: "number", optional: true },
+                digest: { type: "string", optional: true },
+                //nsec records
+                nextDomain: { type: "string", optional: true },
+                typeBitMaps: { type: "string", optional: true },
+                //nsec3 records
+                iterations: { type: "number", optional: true },
+                salt: { type: "string", optional: true },
+                //rrsig records
+                typeCovered: { type: "number", optional: true },
+                labels: { type: "number", optional: true },
+                originalTTL: { type: "number", optional: true },
+                expiration: { type: "number", optional: true },
+                inception: { type: "number", optional: true },
+                keyTag: { type: "number", optional: true },
+                signerName: { type: "string", optional: true },
+                signature: { type: "string", optional: true },
+                //srv records
+                weight: { type: "number", optional: true },
+                port: { type: "number", optional: true },
+                target: { type: "string", optional: true },
 
                 nullified: { type: "boolean", default: false, optional: true }
             },
@@ -150,7 +195,24 @@ module.exports = {
                 id: { type: "string", min: 3, optional: false },
                 fqdn: { type: "string", min: 3, optional: false },
                 network: { type: "string", optional: true },
-                type: { type: "enum", values: ["A", "AAAA", "CNAME", "SOA", "MX", "NS", "TXT", "CAA", 'SRV'], optional: false },
+                type: {
+                    type: "enum", values: [
+                        "A",
+                        "AAAA",
+                        "CNAME",
+                        "SOA",
+                        "MX",
+                        "NS",
+                        "TXT",
+                        "CAA",
+                        "SRV",
+                        "DNSKEY",
+                        "DS",
+                        "NSEC",
+                        "NSEC3",
+                        "NSEC3PARAM",
+                        "RRSIG"], optional: false
+                },
             },
             permissions: ['ddns.create'],
             async handler(ctx) {
@@ -246,7 +308,7 @@ module.exports = {
             }
         },
         bind: {
-            params: { },
+            params: {},
             async handler(ctx) {
                 const params = Object.assign({}, ctx.params);
 
@@ -369,6 +431,79 @@ module.exports = {
                         ttl: record.ttl,
                         exchange: record.data,
                         priority: record.priority,
+                    }
+                //dnssec records
+                case 'DNSKEY':
+                    return {
+                        name: name,
+                        type: recordIndex,
+                        class: _class,
+                        ttl: record.ttl,
+                        flags: record.flags,
+                        protocol: record.protocol,
+                        algorithm: record.algorithm,
+                        publicKey: record.publicKey
+                    }
+                case 'DS':
+                    return {
+                        name: name,
+                        type: recordIndex,
+                        class: _class,
+                        ttl: record.ttl,
+                        keyTag: record.keyTag,
+                        algorithm: record.algorithm,
+                        digestType: record.digestType,
+                        digest: record.digest
+                    }
+                case 'NSEC':
+                    return {
+                        name: name,
+                        type: recordIndex,
+                        class: _class,
+                        ttl: record.ttl,
+                        nextDomain: record.nextDomain, //next domain name
+                        typeBitMaps: record.typeBitMaps //type bit maps
+                    }
+                case 'NSEC3':
+                    return {
+                        name: name, //owner name
+                        type: recordIndex, //record type
+                        class: _class, //record class
+                        ttl: record.ttl, //time to live
+                        algorithm: record.algorithm, //hash algorithm
+                        flags: record.flags, //flags
+                        iterations: record.iterations, //iterations
+                        salt: record.salt, //salt
+                        nextDomain: record.nextDomain, //next hashed owner name
+                        typeBitMaps: record.typeBitMaps //type bit maps
+                    }
+                case 'NSEC3PARAM':
+                    return {
+                        name: name, //owner name
+                        type: recordIndex, //record type
+                        class: _class, //record class
+                        ttl: record.ttl, //time to live
+                        algorithm: record.algorithm, //hash algorithm
+                        flags: record.flags, //flags
+                        iterations: record.iterations, //iterations 
+                        salt: record.salt //salt    
+                    }
+                case 'RRSIG':
+                    return {
+                        name: name, //owner name
+                        type: recordIndex, //record type
+                        class: _class, //record class
+                        ttl: record.ttl, //time to live
+                        typeCovered: record.typeCovered, //type covered
+                        algorithm: record.algorithm, //algorithm
+                        labels: record.labels, //labels
+                        originalTTL: record.originalTTL, //original ttl
+                        expiration: record.expiration, //expiration
+                        inception: record.inception, //inception
+
+                        keyTag: record.keyTag, //key tag
+                        signerName: record.signerName, //signer name
+                        signature: record.signature //signature
                     }
                 case 'SOA':
 
@@ -495,7 +630,24 @@ module.exports = {
             if (!type) {
                 this.logger.error(`No record type found`, request.questions);
                 return false;
-            } else if (!["A", "AAAA", "CNAME", "SOA", "MX", "NS", "TXT", "CAA", 'SRV'].includes(type)) {
+            } else if (![
+                "A",
+                "AAAA",
+                "CNAME",
+                "SOA",
+                "MX",
+                "NS",
+                "TXT",
+                "CAA",
+                "SRV",
+                "DNSKEY",
+                "DS",
+                "NSEC",
+                "NSEC3",
+                "NSEC3PARAM",
+                "RRSIG"
+            ].includes(type)) {
+                // include dnssec records
                 this.logger.error(`Unsupported record type ${type} ${name} ${rinfo.address}:${rinfo.port} ${rinfo.family}`);
                 return false;
             }
@@ -861,7 +1013,7 @@ module.exports = {
                 }
                 await this.createUDPServer('udp4', 53, '127.0.0.1', true);
                 await this.createUDPServer('udp6', 53, '::1', true);
-                
+
             }
             if (process.env.AGENT_INTERFACE) {
                 const address = require('os').networkInterfaces()[process.env.AGENT_INTERFACE].shift().address
