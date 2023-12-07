@@ -776,14 +776,14 @@ module.exports = {
                             response.answers.push(...answers)
                             try {
                                 send(response);
-                            }catch(err){
+                            } catch (err) {
                                 this.logger.error('onQuery', err)
                             }
                         } else {
                             this.stats.misses++;
                             try {
                                 send(response);
-                            }catch(err){
+                            } catch (err) {
                                 this.logger.error('onQuery', err)
                             }
                         }
@@ -893,7 +893,83 @@ module.exports = {
                     await this.broker.call('v1.config.set', { key, value });
                 }
             }
-        }
+        },
+        async setup() {
+            let parentCtx = new Context(this.broker);
+
+            await this.actions.createRecord({ fqdn: 'dns.google', type: 'A', data: '8.8.8.8' }, { parentCtx })
+            await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.249.249' }, { parentCtx })
+            await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.248.249' }, { parentCtx })
+            await this.setupTimers();
+        },
+        async setupTimers() {
+
+            const interval = 10 * 1000
+
+            this.timerStats = setInterval(() => {
+
+                let hits = 0
+                let records = 0;
+                const types = {};
+
+                for (let [type, map] of Object.entries(this.maps)) {
+                    if (isNaN(types[type])) {
+                        types[type] = 0;
+                    }
+                    for (var [key, value] of map.entries()) {
+                        value.totalHits += value.hits;
+                        hits += value.hits;
+                        types[type] += value.hits
+                        value.hits = 0;
+                        records++;
+                    }
+                }
+
+
+                this.stats.querysTotal += this.stats.querys
+                this.stats.errorsTotal += this.stats.errors
+                this.stats.missesTotal += this.stats.misses
+
+
+                this.broker.broadcast('ddns.agent.stats', {
+                    ...this.stats,
+                    ...types,
+                    hits,
+                    records
+                })
+
+
+                if (this.stats.querys > 0)
+                    this.logger.info(`Stats: querys: ${this.stats.querys}/10s ${this.stats.querys / 10}/ps Total: ${this.stats.querysTotal}`);
+                if (this.stats.errors > 0)
+                    this.logger.info(`Stats: errors: ${this.stats.errors}/10s ${this.stats.errors / 10}/ps Total: ${this.stats.errorsTotal}`);
+                if (this.stats.misses > 0)
+                    this.logger.info(`Stats: misses: ${this.stats.misses}/10s ${this.stats.misses / 10}/ps Total: ${this.stats.missesTotal}`);
+
+                this.stats.querys = 0;
+                this.stats.errors = 0;
+                this.stats.misses = 0;
+            }, interval);
+
+            this.timeout = setTimeout(async () => {
+                const list = await this.findEntities(parentCtx, {});
+                if (list) {
+                    for (let index = 0; index < list.length; index++) {
+                        const element = list[index];
+                        await this.createUDPServer(element.address.split('.').length == 4 ? 'udp4' : 'udp6', 53, element.address, element.proxy);
+                    }
+                    await this.createUDPServer('udp4', 53, '127.0.0.1', true);
+                    await this.createUDPServer('udp6', 53, '::1', true);
+
+                }
+                if (process.env.AGENT_INTERFACE) {
+                    const address = require('os').networkInterfaces()[process.env.AGENT_INTERFACE].shift().address
+                    await this.createUDPServer('udp4', 53, address, process.env.AGENT_INTERFACE_PROXY);
+                }
+                await this.actions.sync({}, { parentCtx });
+                parentCtx.emit('ddns.agent.online');
+            }, 100);
+        },
     },
 
     events: {
@@ -929,8 +1005,7 @@ module.exports = {
         clearTimeout(this.timeout)
     },
 
-    async started() {
-       // this.seedDB()
+    created() {
         this.maps = {};
         Packet.TYPEMAP = {}
         Object.keys(Packet.TYPE).forEach((key) => {
@@ -943,11 +1018,6 @@ module.exports = {
         this.logs = new Map();
 
         this.proxyLock = new Lock();
-        let parentCtx = new Context(this.broker);
-
-        await this.actions.createRecord({ fqdn: 'dns.google', type: 'A', data: '8.8.8.8' }, { parentCtx })
-        await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.249.249' }, { parentCtx })
-        await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.248.249' }, { parentCtx })
 
         this.stats = {
             start: Date.now(),
@@ -964,71 +1034,15 @@ module.exports = {
             proxys: 0,
             proxysTotal: 0,
         }
+    },
 
-        const interval = 10 * 1000
+    async started() {
+        // this.seedDB()
 
-        this.timerStats = setInterval(() => {
-
-            let hits = 0
-            let records = 0;
-            const types = {};
-
-            for (let [type, map] of Object.entries(this.maps)) {
-                if (isNaN(types[type])) {
-                    types[type] = 0;
-                }
-                for (var [key, value] of map.entries()) {
-                    value.totalHits += value.hits;
-                    hits += value.hits;
-                    types[type] += value.hits
-                    value.hits = 0;
-                    records++;
-                }
-            }
-
-
-            this.stats.querysTotal += this.stats.querys
-            this.stats.errorsTotal += this.stats.errors
-            this.stats.missesTotal += this.stats.misses
-
-
-            this.broker.broadcast('ddns.agent.stats', {
-                ...this.stats,
-                ...types,
-                hits,
-                records
+        this.setup()
+            .catch((err) => {
+                this.logger.error(err)
             })
 
-
-            if (this.stats.querys > 0)
-                this.logger.info(`Stats: querys: ${this.stats.querys}/10s ${this.stats.querys / 10}/ps Total: ${this.stats.querysTotal}`);
-            if (this.stats.errors > 0)
-                this.logger.info(`Stats: errors: ${this.stats.errors}/10s ${this.stats.errors / 10}/ps Total: ${this.stats.errorsTotal}`);
-            if (this.stats.misses > 0)
-                this.logger.info(`Stats: misses: ${this.stats.misses}/10s ${this.stats.misses / 10}/ps Total: ${this.stats.missesTotal}`);
-
-            this.stats.querys = 0;
-            this.stats.errors = 0;
-            this.stats.misses = 0;
-        }, interval);
-
-        this.timeout = setTimeout(async () => {
-            const list = await this.findEntities(parentCtx, {});
-            if (list) {
-                for (let index = 0; index < list.length; index++) {
-                    const element = list[index];
-                    await this.createUDPServer(element.address.split('.').length == 4 ? 'udp4' : 'udp6', 53, element.address, element.proxy);
-                }
-                await this.createUDPServer('udp4', 53, '127.0.0.1', true);
-                await this.createUDPServer('udp6', 53, '::1', true);
-
-            }
-            if (process.env.AGENT_INTERFACE) {
-                const address = require('os').networkInterfaces()[process.env.AGENT_INTERFACE].shift().address
-                await this.createUDPServer('udp4', 53, address, process.env.AGENT_INTERFACE_PROXY);
-            }
-            await this.actions.sync({}, { parentCtx });
-            parentCtx.emit('ddns.agent.online');
-        }, 10);
     }
 };
