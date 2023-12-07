@@ -930,7 +930,7 @@ module.exports = {
     },
 
     async started() {
-        this.seedDB()
+       // this.seedDB()
         this.maps = {};
         Packet.TYPEMAP = {}
         Object.keys(Packet.TYPE).forEach((key) => {
