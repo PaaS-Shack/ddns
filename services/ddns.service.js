@@ -13,7 +13,7 @@ const Lock = require('../lib/lock')
 
 const dns2 = require('dns2');
 
-const Packet = require('../lib/packet');
+const Packet = dns2.Packet;
 
 Packet.TYPEMAP = {}
 Object.keys(Packet.TYPE).forEach((key) => {
