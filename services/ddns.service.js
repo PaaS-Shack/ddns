@@ -774,10 +774,18 @@ module.exports = {
 
                         if (answers) {
                             response.answers.push(...answers)
-                            send(response);
+                            try {
+                                send(response);
+                            }catch(err){
+                                this.logger.error('onQuery', err)
+                            }
                         } else {
                             this.stats.misses++;
-                            send(response);
+                            try {
+                                send(response);
+                            }catch(err){
+                                this.logger.error('onQuery', err)
+                            }
                         }
 
                         if (this.config['ddns.logging']) {
