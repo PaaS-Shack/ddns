@@ -897,9 +897,9 @@ module.exports = {
         async setup() {
             let parentCtx = new Context(this.broker);
 
-            await this.actions.createRecord({ fqdn: 'dns.google', type: 'A', data: '8.8.8.8' }, { parentCtx })
-            await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.249.249' }, { parentCtx })
-            await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.248.249' }, { parentCtx })
+            await this.actions.createRecord({ fqdn: 'dns.google', type: 'A', data: '8.8.8.8' })
+            await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.249.249' })
+            await this.actions.createRecord({ fqdn: 'cloudflare-dns.com', type: 'A', data: '104.16.248.249' })
             await this.setupTimers();
         },
         async setupTimers() {
@@ -952,7 +952,7 @@ module.exports = {
             }, interval);
 
             this.timeout = setTimeout(async () => {
-                const list = await this.findEntities(parentCtx, {});
+                const list = await this.findEntities(null, {});
                 if (list) {
                     for (let index = 0; index < list.length; index++) {
                         const element = list[index];
@@ -966,8 +966,8 @@ module.exports = {
                     const address = require('os').networkInterfaces()[process.env.AGENT_INTERFACE].shift().address
                     await this.createUDPServer('udp4', 53, address, process.env.AGENT_INTERFACE_PROXY);
                 }
-                await this.actions.sync({}, { parentCtx });
-                parentCtx.emit('ddns.agent.online');
+                await this.actions.sync({});
+                this.broker.emit('ddns.agent.online');
             }, 100);
         },
     },
