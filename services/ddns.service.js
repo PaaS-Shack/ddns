@@ -597,7 +597,7 @@ module.exports = {
         },
         async walkRecords(name, type, address) {
 
-            if (type == 'NS' || type == 'SOA') {
+            if (type == 'NS' || type == 'SOA' || type == 'CAA') {
                 name = tld.getDomain(name.replace('*', '').replace('_', ''))
             }
             if (!name) {
