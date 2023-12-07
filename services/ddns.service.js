@@ -773,19 +773,14 @@ module.exports = {
                     this.onQuery(request, response, rinfo).then((answers) => {
 
                         if (answers) {
-                            response.answers.push(...answers)
-                            try {
-                                send(response);
-                            } catch (err) {
-                                this.logger.error('onQuery', err)
-                            }
+                            response.answers.push(...answers);
                         } else {
                             this.stats.misses++;
-                            try {
-                                send(response);
-                            } catch (err) {
-                                this.logger.error('onQuery', err)
-                            }
+                        }
+
+                        if(response){
+                            console.log(response)
+                            send(response)
                         }
 
                         if (this.config['ddns.logging']) {
