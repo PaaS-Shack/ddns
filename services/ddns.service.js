@@ -495,7 +495,7 @@ module.exports = {
             // check if question.name has uppercase letters and if so, return error
             // stop responding to queries with uppercase letters
             if (/[A-Z]/.test(question.name)) {
-                throw new MoleculerRetryableError(`Invalid domain name ${question.name}`, 400, "INVALID_DOMAIN_NAME");
+               // throw new MoleculerRetryableError(`Invalid domain name ${question.name}`, 400, "INVALID_DOMAIN_NAME");
             }
 
             if (!type) {
