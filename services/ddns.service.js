@@ -246,7 +246,7 @@ module.exports = {
             }
         },
         bind: {
-            params: { },
+            params: {},
             async handler(ctx) {
                 const params = Object.assign({}, ctx.params);
 
@@ -460,7 +460,9 @@ module.exports = {
         },
         async walkRecords(name, type, address) {
 
-            if (type == 'NS' || type == 'SOA') {
+            if (type == 'NS' || type == 'SOA' || type == 'CAA') {
+                // for records that are not in the same domain as the query we need to find the NS records for the domain
+                // and query them for the record type
                 name = tld.getDomain(name.replace('*', '').replace('_', ''))
             }
             if (!name) {
@@ -859,7 +861,7 @@ module.exports = {
                 }
                 await this.createUDPServer('udp4', 53, '127.0.0.1', true);
                 await this.createUDPServer('udp6', 53, '::1', true);
-                
+
             }
             if (process.env.AGENT_INTERFACE) {
                 const address = require('os').networkInterfaces()[process.env.AGENT_INTERFACE].shift().address
