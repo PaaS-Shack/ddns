@@ -639,7 +639,8 @@ module.exports = {
                         }
                     }).catch((err) => {
                         this.stats.errors++;
-                        this.logger.error('onQuery', err)
+                        if (this.config['ddns.logging'])
+                            this.logger.error('onQuery', err)
                     })
                 }
             });
